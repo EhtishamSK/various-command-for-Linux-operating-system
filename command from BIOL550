@@ -1,0 +1,264 @@
+GENERAL COMMANDS FROM THE BIOL550 COURSE OFFERED BY DR. BAILEY AT THE BIOLOGY DEPARTMENT OF THE NEW MEXICO STATE UNIVERSITY 
+  
+How to connect FileZilla to server 
+Host: sftp://128.123.95.27
+username: ehtisham
+Password: *******
+Port: *****
+
+pwd – present working directory
+ls – the “short list” command
+ll – the “long list” command (shows hidden files)
+exit – exit the terminal or whatever session you are in
+cd – change directory command “cd” to navigate to the /media/Scratch8TB/CLG2023
+cd /media/Scratch8TB/CLG2023
+cd ../  – You will now be in the Scratch8TB/  
+ ../.. – you would have moved up two directories to 
+cd ../../.. – would move you three directories to the root director  /  
+mkdir – make a new folder  
+cp   FROM	TO – copy from one folder to other folder
+cp    filename   / media/Scratch8TB/CLG2023/your folder
+mv    Test.fasta    my_name.file    #this moves the file to a new name, not to a new physical location 
+cp    my_name.file      my_name2.file     #notice this has just makes a copy of the file in the same location as the original – the original is still there!
+cat – display all the content in a file on the screen 
+q – exit key from display 
+cat   filename 
+less – display less content in file on the screen 
+less filename 
+head – top lines of the file (by default it will show 100 lines)
+head filename 
+tail – bottom of the file     (by default it will show 100 lines)
+tail filename 
+•	you can change number of lines displayed by including the -n option with the command.  
+head –n 100 – display 100 lines from the top 
+tail –n 100 – display 100 lines from the bottom 
+touch   filename – this will create a new text file called filename
+nano   filename – this will open a text editor (like notepad) for an existing or new file called “filename” (any name we chose). However, if the file didn’t already exist it will not be created unless you save the file at some point. If you enter nano and a new file called “filename” and immediately exit nano, the file will not be saved and therefore won’t exist. To exit and save our file from nano, hold down the cntrl key and hit the x key.
+wc -l filename  – count the number of lines in a files 
+how to move files between your laptop and your file system on the class server
+we’ll use FileZilla to move this file from your laptop to the server (there are many other options beside FileZilla,  you are welcome to use another option if you prefer it).  If you haven’t already downloaded and installed FileZilla, please do (https://filezilla-project.org/).  Launch the program when it has finished installing. Watch: https://www.youtube.com/watch?v=y-_BPfKclh8 
+
+
+wget – download the file directly from any of the websites. 
+wget     http://biology-web.nmsu.edu/bailey/CLG2018/2nd_tarball.tar 
+tar   -xvf    2nd_tarball.tar – extract the contents of a tarball (a compressed archive) 
+cat seq0.fasta   >  multifasta.fasta
+cat seq1.fasta   >>  multifasta.fasta
+cat seq2.fasta   >>  multifasta.fasta
+cat seq3.fasta   >>  multifasta.fasta
+cat seq4.fasta   >>  multifasta.fasta
+using the wrong redirect (>) can cause you problems.  The “>” will overwrite any existing information in a file.  However, the “>>” will append information to the bottom of the file and not overwrite existing information.  The difference between > and >> is quite important just as the difference between cp and mv is quite important!
+Ok, that was a simple but slow way to create a single file that combines contents from many files.  Let’s try to do this more efficiently.  Notice that files we are merging have consistent file names that only differ by a single number in the name.  Because of this simple, but consistent, naming strategy we can use a regular expression wildcard character to easily create a multifasta with just one command.  Our first wildcard will be the “*” which means any possible string of characters.
+cat     seq*.fasta   >>    multifasta2.fasta
+So the cat command opened all files with the name “seq{any-string}.fasta”.  We had five files fitting that criterion so all five were printed to the “multifasta2.fasta” file. 
+GENOME ASSSEMBLY PART 1:  FASTQC
+There are paired end Illumina data that have been zipped (compressed) to save space.  Though you will often want to keep files like these zipped to save space, but we will unzip them for simplicity now - use the following commands (the “-d” option for gzip means “decompress”):
+gzip   -d  300_R1_1M.fastq.gz (file name) – unzip the file 
+gzip -d * .gz  file1  file2 – unzip two files as the same time 
+•	check the quality of these raw sequencing data using a software package called FASTQC.  First, please create a directory for the output of FASTQC called “Fastqc_output
+mkdir     Fastqc_output/
+fastqc    300_R1_1M.fastq     -o    Fastqc_output/   - 300_R1_1M.fastq is a file name
+repeat for the second set of reads
+fastqc    300_R2_1M.fastq     -o    Fastqc_output/ - 300_R2_1M.fastq is a file name
+notice that the “-o” option tells fastqc where to put the new results
+•	Notice FASTQC has created zipped folders and other outputs for each of the original starting files – you will find these in the      Fastqc_output/      subdirectory
+•	transfer the two html files (not the zipped files) to your computer
+PART II – TRIMMOMATIC
+•	trimming Illumina paired-end data to removed unwanted adapter sequences and low quality bases. 
+•	Run this command to trim – we will talk about this command in detail - you DON”T NEED TO TYPE IT ALL OUT ONE CHARACTER AT TIME.  Remember to use your tab when completing file names to avoid typos!!! 
+trimmomatic    PE  -phred33   300_R1_1M.fastq   300_R2_1M.fastq   300_R1_1M.fastq_paired.fq   300_R1_1M.fastq_unpaired.fq   300_R2_1M.fastq_paired.fq   300_R2_1M.fastq_unpaired.fq   ILLUMINACLIP:/home/cdb3ny/TruSeq3-PE.fa:2:30:10   LEADING:3   TRAILING:3   SLIDINGWINDOW:4:15   MINLEN:80
+DE NOVO GENOME ASSEMBLY
+•	We will use the assembler SOAPdenovo2, which was designed for de novo assemblies of genomes using Illumina data.  This package can handle genome assemblies with unpaired, paired, and mate paired data in a variety of combinations.
+•	SOAPdenovo2 introduces us to a new convention that applies to some software tools on the command line.  This is the configuration file.  These are separate files that provide many of the parameters and inputs to a software package.  Essentially it is a file that you create that contains the instructions for the software you are running.  So, rather than having to type all these out when you go to run at the command line (trimmomatic was an example of a program that might benefit from the use of a config file), you simply give the command and the path/name of your configuration file for many parameters. These config files can be helpful as a permanent record of the parameters used (e.g., a notebook).
+copy the following three files from our Course_files folder:
+•	Genome_R_1.fastq
+•	Genome_R_2.fastq
+•	soapconfig.file
+•	Run trimmomatic on these two fastq files.  Note that you need to specify the two input files and the names of the four output files (forward and reverse paired files and unpaired forward and unpaired reverse files).  Below is the basic command you need to modify (items in bold indicate what you must specify with names that work for you.  You could also modify output names, but that isn’t strictly necessary today).
+trimmomatic    PE  -phred33   input_forward.fastq     input_reverse.fastq     output_forward_paired.fastq output_forward_unpaired.fastq    output_reverse_paired.fastq   output_reverse_unpaired.fastq ILLUMINACLIP:/home/cdb3ny/TruSeq3-PE.fa:2:30:10   LEADING:3   TRAILING:3   SLIDINGWINDOW:4:15   MINLEN:80
+•	modify the soapconfig.file so that it contains the information necessary to run the assembly
+•	Copy the names of the forward and reverse paired files that resulted from trimmomatic.  Now open the soapconfig.file in the text editor (for example nano) on the server.  At the bottom of the soapconfig.file you will see lines for “q1=” and “q2=”.  Delete the old names that are there and paste the name of the forward paired file after the “q1=” and the name of the reverse paired file after the “q2=”.  No space is required between the “=” and the file names.  Exit and save your changes to the soapconfig.file.
+•	The program SOAPdenovo2 needs to run in its own environment. To do this we need to activate that environment.  Please run this command to do this
+conda   activate   SOAPdenovo
+•	Now were are ready to run the software.  You can use tab key utility to complete many of these items, including calling up the software.  Note that your output is going into the new subfolder called “K35” (that is the –K option) and the output files will all begin with the prefix “k35” (that is the -o option).  This output and file prefix are things you can determine (once you start, it will take a minute or two to finish).
+SOAPdenovo-63mer     all     -s    soapconfig.file    -p  2     -K   35    -o   K35/k35run
+•	#A couple of notes on this command:  “all” means it will run all elements of the assembly process (otherwise it is possible to do several different steps singly rather than all at once), “-s” identifies the configuration file name (you can give a relative or absolute path), “-p 2” is the number of computer processors you are requesting to do the job on the server, “-K 35” is the kmer length we are using, and “-o” is the output location and prefix filename for output files.
+•	Navigate into your “K35” subdirectory to find the result files.   There are numerous files, including some that summarize more of the assembly statistics.  View the contents of the “k35run.scafStatistics” file that was saved. 
+•	We want to generate a fasta file that includes just the largest scaffold, but not the smaller scaffolds/contigs in the file. We need to fix a small technical issue with the sequence name (on the definition line in the fasta file) we want to recover.  Use nano to open your k35run.scafSeq.fasta file.  Notice that the big scaffold (fasta sequence) starts at the beginning of this file and it is called something like “scaffold1 52.8”.  Unfortunately, the space between the name and number cause problems for our next step.  So please replace the space with a “_” character.  The sequence name is now “scaffold1_52.8” (notice the underline in place of the space!!).
+•	now use nano to create and open a new file - “scaffold_name.txt”.  In that file simply paste the name you just copied (for example “scaffold1_52.8”) and save changes to this file as you exit nano.
+•	Note: we might have had a list of tens, hundreds, or thousands of sequences we wanted to recover from a multifasta file by their name – here we are only recovering the one we indicated. If we had more than one, our scaffold_name.txt file would be a list of those names - with one name per line – the following is very useful tool!
+•	Here is the command to isolate our single large scaffold into a new file (use your tab to make sure you have each element in correctly) :
+seqtk    subseq    k35run.scafSeq.fasta   scaffold1_52.8.txt    >    scaffold1.fasta
+•	Note: this is seqtk toolkit and the subseq tool within that.  The inputs are the original multifasta, the list file with the sequence(s) to recover by name, and then the new output file name.
+ANNOTATING THE SCAFFOLD
+•	See class exercise for this – Nothing related to Linux. 
+
+
+HUMAN GENOME ANNOTATION:  UNDERSTANDING THE CONTENTS AND MANIPULATION OF THE DATA
+zcat filename | less – view the content of the zip file
+grep   -v “#”    your.gff – skip the number of lines 
+grep   -v “#”    your.gff  | wc -l –  return number of lines without # 
+grep   -v  “#”   your.gff   |   cut   -f3  – remove lines with # and then cut the column/filed 3 
+grep   -v  “#”   your.gff   |   cut   -f3   |   sort  |   uniq – remove lines with #, cut the column/filed 3, sort items in column 3 and give unique items 
+grep   -v  “#”   your.gff   |   cut   -f3   |   sort  |   uniq -c – remove lines with #, cut the column/filed 3, sort items in column 3 and give how many unique items 
+grep   -v  “#”   your.gff   |   cut   -f3   |   sort  |   uniq -c  >  unique_types.txt
+grep -c ^MT filename – we are looking for lines  that start with MT 
+•	Column of data provided by gff3 (1-7 are the columns of gff3 file)
+1.	Sequence ID
+2.	Source (which program identifies as such GeneSeq) 
+3.	Type (which gene, mRNA, tRNA) 
+4.	Start position 
+5.	End position
+6.	Score (measure of confidence / similarity ) 
+7.	Strand (+ is forwards and -ve is reverse) 
+8.	Reading frame of gene 1 means first base of the codon 
+9.	Actual name of the gene  
+Exploring gene expression: we have explored our annotation file and understand what types of annotations were found within scaffold1.  Now let’s use the annotation file plus our genome for an interesting visual exercise. We will map some raw gene expression data (transcriptome data or “RNA-seq data”) to the genome.  From this we can learn how to map data to a genome and then visualize the regions of this genome and likely genes that were expressed in the RNA-seq data.  We will use the STAR alignment software for mapping.
+•	To map the reads to a genome using STAR (or most aligners/mappers) on the command line, we need to create an index to the genome. 
+STAR   --runMode    genomeGenerate   --runThreadN  2   --genomeDir Star_index                        --genomeFastaFiles    scaffold1.fasta
+•	Now we can map the reads to the genome. For this you need the genome index we just created and our raw transcriptome data.
+STAR    --genomeDir    Star_index/    --readFilesIn  /media/Scratch8TB/CLG2023/Course_files/500ng_totalRNA_L_trichandra_undepleted_userDR_rep1.2.400k.fastq.gz          --outSAMtype     BAM     SortedByCoordinate
+•	The output file from this mapping exercise is a binary file we can’t read. It’s entitled as follows. 
+Aligned.sortedByCoord.out.bam
+•	Viewing the reads that aligned to your genome using IVG tools. See class exercise. 
+MICROSATELLITE IDENTIFICATION AND MORE SCRIPTING TO RECOVER DESIRED RESULTS
+•	Normally we would run Phobos now, but the author has not yet made the program available to us, so we will skip this step and move on. 
+•	Copy the file “chr22.fa_phobos.out” from our Course_files folder to your “Human_Chr22” folder. This is the output of a phobos run on Human chromosome 22 from last year. 
+•	Use less to look at the output that saved to chr22.fa_phobos.out.  
+•	Notice that there are 5 lines of output for each microsatellite discovered.  The first line of output for each provides most of the information we will need today – for example
+pentanucleotide  10510225 :  10510235 |     11 bp |     11 BP |      6 pt | 100.000 % |   0 mis |   0 ins |   0 del |   0 N |  unit AGGCC
+•	Use less (or something similar) to see what you recovered in the chr22.fa_phobos.nucl.out.  It should look pretty, but computationally it is more difficult to harvest data from.  Everything is formatted by the insertion of one or more spaces between columns of desired information, not predictable single characters like a single tab or even a single space (that can be used to define columns for data harvesting).
+•	Now convert this file to a tab format to make it more useable.  The new “sed” command will help here. There are two different problems you need to solve during this correction (the order is important).  1) remove the space(s) at the beginning of each line (there are 1 or more spaces that begin every line) and 2) replace the other sets of spaces with a single tab.  These two things can be done with one command for each or a single pipeline. 
+sed    's/^ \+//g'      input    |    sed    's/ \+/\t/g'   >    output – Remove all those irritating spaces that prevent us from efficiently using our cut command. 
+
+
+
+grep   nucleotide   input   |    cut   -f1   |   sort   |    uniq   -c   >   output
+grep   dinucleotide   input   |   cut   -f1,2,4  >    output
+GENBANK DOWNLOAD, “FOR LOOP”, ALIGNMENT, AND PHYLOGENETICS
+•	GO TO THE PDF VERSION.
+•	Copy the table contents (note, you only want the rows of real data, we don’t really need the headers – except that you need to know which column includes the accession numbers, but they should be obvious).
+•	Use nano to open a new file called accessions_table.txt.  Paste your accession information (from the article) into that document and save as you exit nano 
+•	The data from PDF looks like this, though it’s not a complete table:
+Candida albicans 5728 Clinical isolate AB044909
+Candida albicans 46907 Clinical isolate AB044910
+Candida albicans 48311T CBS 562 AB044911
+Candida albicans 48922 Clinical isolate AB044918
+Candida albicans 49689 Clinical isolate AB044919
+sed 's/ AB/\tAB/g' accessions_table.txt | cut -f2 > identifiers_column.txt – this command will cut the data into two columns separating accession numbers in column 2. 
+sed -z 's/\n/ /g' identifiers_column.txt > identifiers_space.txt – this command will convert the accession names from column into row format. To convert the column of data to a row of data we simply need to remove line breaks and replace them with a space. Necessary for the development of a for loop. 
+•	Now we can just copy the identifiers_space.txt to a new file called our_first_shell_script.sh
+for i in  AB044909 AB044910 AB044911 AB044918 AB044919 AB044912 AB044913 AB044914 AB044920 AB044921 AB044922 AB044915 AB044924 AB044923 AB044925 AB044926 AB044927 AB044928 AB044929 AB044916 AB044930 AB044917 AB044931 AB044932 AB044933 AB040656
+do
+curl "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&amp;id=$i&amp;rettype=fasta&amp;retmode=text" > $i.fa
+done
+#be sure there is a new line break after the word “done”
+•	We need to give the computer permission to run your shell script as an executable file. Use these two commands 
+chmod   u+x   our_first_shell_script.sh
+./our_first_shell_script.sh
+•	When the shell script finishes running, look at the files in your directory now.  You should have a fasta file for each of the accession numbers (be sure you have 26 sequences – if not, something has gone wrong).
+•	To align these sequences with one another, we need to make a single multifasta file out of the set of individual fasta files. 
+cat AB* >> candida_dataset.fasta
+•	Next we align these nucleotide sequences data so that meaningful information can be extracted for phylogenetic analysis.  We will use the program muscle for this purpose. 
+muscle  -in  candida_dataset.fasta   -out   candida_dataset_aligned.fasta
+•	We need to convert from the fasta format to a format commonly used in phylogenetics and population biology – phylip format. In first and second sed command there is a space after .1 and candida which is replaced by _ . Observe closely. FASTA format is used to store DNA/RNA data used for  various biological purposes, such as sequence alignment, however, PHYLIP Format has information specific to phylogenetic tree.
+sed    's/.1 /.1_/g'    candida_dataset_aligned.fasta   |   sed   's/Candida /Candida_/g'   > candida_dataset_aligned_names.fasta
+•	now we are ready to generate a very quick and dirty phylogeny.  For this we will use the tool RAXML – which employs a maximum likelihood approach to phylogeny reconstruction.  Here is example command for raxml… (notes: the “-p” is a random number generator, the “-s” is the input file, the “-m” is a model of evolution, and the “-n” is the output file name suffix, -o is the outgroup species to give the tree a directionality).
+raxmlHPC   -p  12345   -s   candida_dataset_aligned_names.phy  -m  GTRCAT   -o AB040656.1_Malassezia      -n   candida
+•	This will generate 5 output files that begin with the prefix “RAXML”.  The file we are interested in is RAxML_bestTree.candida. See the class excise 
+•	I am surprised to know that Candida is involved in two very different processes. It play an important role in the food fermentation (wine aroma, high quality coffee and cocoa beans) and at the same time it is well known for causing infections in humans, especially in the gastrointestinal tract.
+
+ALIGNERS/MAPPERS
+•	You should have query and target sequence 
+•	Please check the md5sum of this file and save the resulting code to a file called “unknown_genome.md5sum”. MD5 checksums are commonly used for various purposes, including data integrity verification. By comparing the MD5 checksum of a file before and after it's transferred or stored, you can check if the file has been modified or corrupted. If the checksums match, it's likely that the file remains unchanged. If the checksums differ, there is a high probability that the file has been altered
+md5sum unknown.fasta >  unknown_genome.md5sum
+•	so now you have a genome (which is essentially the database you want to search – often called the “target”) and the sequence of interest (this is the “query” you are looking for within the genome).
+•	Run the command below – the “-header” option will output the names for the column headers, so you can easily interpret the output.
+blasr  --header   unknown.fasta   k35run.scafSeq.fasta   >   blasr_output.txt
+•	Copy them and paste the output from blasr_output.txt into Excel or Google Sheets.  You will need to use the “Data -> Text to Columns” option to get everything into its respective column.  
+blastn (nucleotide vs. nucleotide blast search)
+•	For blast we need to create an index/database of our genome file before you can run a blast search.
+makeblastdb   -in   k35run.scafSeq.fasta    -dbtype   nucl
+•	Run your ll command to see that this has created three sets of indices with the prefix k35run.scafSeq.fasta
+•	Now let’s run the “stand alone” blast – this is all one line
+blastn  -query  unknown.fasta  -db  k35run.scafSeq.fasta   -outfmt  6  -num_alignments   100     -out   blast_output.txt
+•	The query sequence matched the target  sequence with 100% identity over an alignment length of 6816 base pairs. No mismatches or gap suggesting a perfect match. The alignment starts at position 1 of the query sequence and ends at position 6816. In the target sequence the alignment starts at position 2689 and ends at position 9504. E-value is very low, indicating a highly significant match. The E-value in the BLAST is low (0.0), suggesting a highly significant match, however, BLASR output does not provide an E-value but instead has a score value of -34080.
+Human NUMTs – AWK and BLAST
+•	How many total matches did blastn identify in the resulting output file
+wc -l Mt_Hum_nuc.blast.out > nuclear_mito_matches.txt
+•	How many of the matches in “nuclear_mito_matches.txt” are simply the mitochondrion matching itself
+grep MT Mt_Hum_nuc.blast.out | cut -f2 | sort | uniq -c > mito-mito_matches.txt
+•	How many of the matches ˃ 1000 bp had a percent identical match (“percent Identity”) 
+awk '$4 >= 1000' Mt_Hum_nuc.blast.out | wc -l > nuclear_mito_1000bp_matches.txt
+
+•	How many of the matches ˃ 1000 bp had a percent identical match (“percent Identity”) >75%?  
+awk '$4 >= 1000 && $3 >= 75' Mt_Hum_nuc.blast.out | wc -l > output 
+
+Rice NUMTs
+•	we need to extract the mitochondrial genome from the file so we can use it as the query against the full genome. For this we need a file with the name or names of the sequences you want to extract from the larger fasta file. 
+grep ">"  Oryza_sativa.IRGSP-1.0.dna.toplevel.fa > fasta_sequence_names.txt
+•	Go into that new file and copy the full name of the mitochondrial sequence (not including the “>” (at the beginning of the line).  Save that one name to a file called “mito.name.txt”
+•	Now we can use this command to extract the mitochondrial genome into a separate file
+seqtk subseq Oryza_sativa.IRGSP-1.0.dna.toplevel.fa  mito.name.txt > Mito_genome.fasta
+•	make a blast database out of your nuclear genome file
+makeblastdb   -in   Oryza_sativa.IRGSP-1.0.dna.toplevel.fa    -dbtype   nucl
+•	Run a blastn with the mitochondrial genome as the query and the nuclear genome as the target
+blastn  -query  Mito_genome.fasta  -db  Oryza_sativa.IRGSP-1.0.dna.toplevel.fa   -outfmt  6  -num_alignments   100     -out   Rice_NUMTS_blast.out
+•	If you exclude the mitochondrial-to-mitochondrial matches, how many NUMT matches are there in the file (remember, each line of output is a match)?
+grep Mt Rice_NUMTS_blast.out | cut -f2 | sort | uniq -c > output 
+•	Isolate the rows of data for chromosome 12 matches and sum the data for length, which is in column 4 ($4)
+awk '$2  = = "12" ' Rice_NUMTS_blast.out | awk '{sum+=$4;} END{print sum;}'
+•	Sum command awk '{sum+=$4;} END{print sum;}'
+RICE NUMTS – IGV VISUALIZING SOME INTERESTING FINDINGS
+•	isolate a fasta file with chromosome 12 from the full nuclear genome and call it chromosome12.fasta
+grep ">12" Oryza_sativa.IRGSP-1.0.dna.toplevel.fa > chromo12_name.txt 
+•	Go into that new file and copy the full name of the chromosome 12 (not including the “>” (at the beginning of the line) and save it. 
+seqtk subseq Oryza_sativa.IRGSP-1.0.dna.toplevel.fa  chromo12_name.txt > Mito_genome.fasta
+•	make a data base of the genome 
+•	run blast 
+•	how many bases of chromosome 12 match the mitochondrial genome? Remember the little command from last time – it will sum all info in column 4 (column 4 is the length of each match 
+awk '{sum+=$4;} END{print sum;}' chromo12_matches_mito.out
+•	let’s prepare a file that will allow us to visualize which portions of the mitochondrion are present on chromosome 12.  For this we will create a “BED File”
+•	The bed file must consist of at least three columns.  For today we will keep things simple and only have those three columns of data.  Column 1 is the name of the chromosome you are viewing in the genome browser, for today this is the name Mt (mitochondria).  Columns 2 and 3 of the bed file formats are the start and stop (respectively) of the match on the genome  you are viewing – the mitochondrion.  So that is it just three-tab delimited columns of data in a basic bed file.
+•	To make this file we just need to cut out columns #2 (name Mt), #9 (database starting), and #10 (database ending match) from the blastn result file (“chromo12_matches_mito.out”) and save the result to a new file we will call  chromo12_matches_mito.out.bed
+cut -f2,9,10  chromo12_matches_mito.out > chromo12_matches_mito.out.bed 
+•	Now we need to make one little modification to our original mitochondrial genome.  Make a copy of the mitochondrial genome and save it as Mito_genome.for.IGV.fasta.  Open this file in nano (or similar) and make sure the definition line is reduced to “>Mt”.  Delete the rest of the definition line. The chromo name here must match the name in bed file which is just “>Mt”
+cp Mito_genome.fasta  Mito_genome.for.IGV.fasta
+
+Gene Expression (Transcriptomics) - RNA-seq
+Developing our file system
+•	make three new subdirectories in your Danio_expression folder 
+•	 Danio_genome   ## this will store the genome, annotations, and star-index files for searching
+•	Danio_2cell_RNA  ## this will store the Illumina F+R RNA-seq files for the 2cell stage embryo data.
+•	 Danio_6hr_RNA  ## this will store the Illumina F+R RNA seq files for the 6h embryo (gastrula)
+Obtaining the necessary genome
+As we’ve already seen, the ensemble database handles important vertebrate model genomes and related data.  Please go to https://useast.ensembl.org/info/data/ftp/index.html   Here you will see a list of resources for a variety of vertebrate genomes of interest (we’ve used this page twice before). Click on the Zebrafish row and  “DNA(FASTA)” column
+“Danio_rerio.GRCz11.dna.primary_assembly.fa.gz” and copy its weblink.
+•	Now decompress the genome – this is necessary for some downstream commands
+•	Let’s rename the genome to simpler name – this will make life easier later (save the command!!).  
+mv   Danio_rerio.GRCz11.dna.primary_assembly.fa    GRCz11.fa
+Obtaining the Annotations for the genome
+Go back to the ENSEMBLE page and the table of available data for vertebrates.  Copy the link for the zebrafish GTF file (the ensemble gff3 format is not standard and causes problems with a program later. You must download the GTF, not the GFF3, even though they should contain the same information). Copy the link address for the Danio_rerio.GRCz11.110.chr.gtf.gz annotation file and; 
+•	download the annotation into your Danio_genome folder  
+•	Decompress your annotation with gzip
+Obtaining the RNA-seq data
+Change into the   Danio_2cell_RNA/    subdirectory
+You can use the following simple command to get the RNA-seq files 
+wget    ftp://ftp.ebi.ac.uk/pub/training/Train_online/RNA-seq_exercise/2cells*
+•	How many reads are in each of these two files?
+•	Is the number of reads in each file equal?  If not… you have problem!
+Change into the   Danio_6hr_RNA/     subdirectory
+wget   ftp://ftp.ebi.ac.uk/pub/training/Train_online/RNA-seq_exercise/6*
+Generate the index of the genome to speed up alignments later
+Navigate back to the Danio_genome subfolder (the one with the genome fasta and gtf file in it).  When you can set your computer running for an hour or so (with putty or the terminal open and active), run the following command (note that “nohup” will keep your process running even if you lose internet connection): 
+nohup STAR  --runMode genomeGenerate --runThreadN 1 --genomeDir . –genomeFastaFiles Danio_rerio.GRCz11.dna.primary_assembly.fa
+Once you can see that it is running, you can close your terminal window and it should finish within a few hours.  Look back later in the day to be sure it finished, and you have indexes for your genome file.
+Aligning the raw transcriptome data
+Aligning the raw transcriptome data (the illumina PE data) from each of the two data sets (2cell and 6hour) to the genome with a splice aware aligner called STAR.  This process will be done for the 2cell and 6hr RNA-seq data sources separately, so we will need to do this step twice, once for the 2cell RNA-seq data and once for the 6hour RNA-seq data. We will start with the 2cell RNA-seq data and name the output prefix 2hr. Repeat the mapping for the 6 hour RNA-seq data. Create the full command for the 6cell data and name the output prefix 6hr 
+Navigate into your      Danio_expression/    directory.  
+STAR  --runThreadN  2   --genomeDir   Danio_genome/   --readFilesIn   Danio_2cell_RNA/2cells_1.fastq Danio_2cell_RNA/2cells_2.fastq   --outSAMtype    BAM    SortedByCoordinate  --outFileNamePrefix  2cell 
+•	Output files are  2cellLog.final.out   and   6hrLog.final.out
+Assessing the results of the alignment steps
+If the genome and RNA-seq data are both of good quality, and they are not too divergent from each other, we should see a high percentage of our RNA-seq reads mapping to the genome.  For the human genome and other high-quality genomes, you often see people talking about >80% mapping being pretty good.  >90% mapping is exceptionally good. 
+Now comparing the 2cell and 6hr stage, which experiment seems to have had better data and why?
+% of uniquely mapped reads for 2 cell is higher and  % of unmapped reads for 2 cell is also lower. Based on this, we can say 2cell data is better than 6hr.
